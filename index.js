@@ -198,20 +198,36 @@ const dischargeBulkCmd = new SlashCommandBuilder()
   );
 
 async function registerCommands() {
+  const rest = new REST({ version: "10" }).setToken(TOKEN);
+
+  // Build once
+  const body = [dischargeCmd.toJSON(), dischargeBulkCmd.toJSON()];
+
   try {
-    const rest = new REST({ version: "10" }).setToken(TOKEN);
+    // Register to every guild the bot is currently in (FAST appearance)
+    const guilds = await client.guilds.fetch();
+    console.log(`Registering commands in ${guilds.size} guild(s)...`);
 
-    // GLOBAL command registration (no guild id needed)
-    await rest.put(Routes.applicationCommands(client.user.id), {
-      body: [dischargeCmd.toJSON(), dischargeBulkCmd.toJSON()],
-    });
+    for (const [guildId] of guilds) {
+      try {
+        await rest.put(Routes.applicationGuildCommands(client.user.id, guildId), {
+          body,
+        });
+        console.log(`registered commands in server ${guildId}`);
+      } catch (e) {
+        console.error(
+          `registered commands in server ${guildId}:`,
+          e?.rawError ?? e
+        );
+      }
+    }
 
-    console.log("Global slash commands registered (may take a while to appear).");
+    console.log("Done registering guild commands.");
   } catch (err) {
-    console.error("Slash command registration failed:", err?.rawError ?? err);
-    // Don't crash. Bot can still run and you can fix perms later.
+    console.error("Command registration failed:", err?.rawError ?? err);
   }
 }
+
 
 client.once("ready", async () => {
   console.log(`Logged in as ${client.user.tag}`);
