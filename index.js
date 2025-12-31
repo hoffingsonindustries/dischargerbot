@@ -9,6 +9,19 @@ const {
   PermissionsBitField,
 } = require("discord.js");
 
+const http = require("http");
+const PORT = process.env.PORT || 8080;
+
+http
+  .createServer((req, res) => {
+    res.writeHead(200, { "Content-Type": "text/plain" });
+    res.end("ok");
+  })
+  .listen(PORT, "0.0.0.0", () => {
+    console.log(`Health server listening on ${PORT}`);
+  });
+
+
 const TOKEN = process.env.DISCORD_TOKEN;
 const GUILD_ID = process.env.GUILD_ID;
 const CREWMAN_ROLE_ID = process.env.CREWMAN_ROLE_ID;
