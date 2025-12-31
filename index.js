@@ -9,6 +9,11 @@ const {
   PermissionsBitField,
 } = require("discord.js");
 
+//
+// ----------------------------
+// Fly.io health server (prevents proxy timeouts)
+// ----------------------------
+//
 const http = require("http");
 const PORT = process.env.PORT || 8080;
 
@@ -21,11 +26,18 @@ http
     console.log(`Health server listening on ${PORT}`);
   });
 
+//
+// ----------------------------
+// ENV
+// ----------------------------
+//
 const TOKEN = process.env.DISCORD_TOKEN;
 const CREWMAN_ROLE_ID = process.env.CREWMAN_ROLE_ID;
 const DISCHARGED_ROLE_ID = process.env.DISCHARGED_ROLE_ID;
 
-// Role required to use the discharge commands
+// Only enforce REQUIRED_ROLE_ID in this one guild.
+// (Other guilds can use the commands without having that role.)
+const MAIN_GUILD_ID = "961053793141784577";
 const REQUIRED_ROLE_ID = "961288233856143421";
 
 if (!TOKEN || !CREWMAN_ROLE_ID || !DISCHARGED_ROLE_ID) {
@@ -35,9 +47,11 @@ if (!TOKEN || !CREWMAN_ROLE_ID || !DISCHARGED_ROLE_ID) {
   process.exit(1);
 }
 
+//
 // ----------------------------
 // CONFIG: explicit roles to remove on discharge
 // ----------------------------
+//
 const ROLES_TO_REMOVE_ON_DISCHARGE = [
   "961106083601063946",
   "961106279265353758",
@@ -79,12 +93,13 @@ const ROLES_TO_REMOVE_ON_DISCHARGE = [
   "961110016922890312",
 ];
 
-// Roles that should never be removed automatically (besides @everyone)
 const KEEP_ROLE_IDS = new Set([DISCHARGED_ROLE_ID]);
 
+//
 // ----------------------------
 // Helpers
 // ----------------------------
+//
 function uniq(arr) {
   return [...new Set(arr)];
 }
@@ -127,20 +142,20 @@ async function dischargeMember({ guild, me, actorTag, member, reason }) {
     if (allowed.size > 0) {
       await member.roles.remove(
         allowed.map((r) => r.id),
-        `discharged cleanup by ${actorTag}: ${reason}`
+        `Discharged cleanup by ${actorTag}: ${reason}`
       );
       removedRoleNames.push(...allowed.map((r) => r.name));
-      steps.push(`removed configured roles (${allowed.size})`);
+      steps.push(`Removed configured roles (${allowed.size})`);
     } else {
-      steps.push("configured roles present, but none removable (hierarchy).");
+      steps.push("Configured roles present, but none removable (hierarchy).");
     }
 
     if (blocked.size > 0) {
       blockedRoleNames.push(...blocked.map((r) => r.name));
-      steps.push(`blocked by role hierarchy (${blocked.size})`);
+      steps.push(`Blocked by hierarchy (${blocked.size})`);
     }
   } else {
-    steps.push("No roles actually found to configure yo");
+    steps.push("No configured roles found to remove.");
   }
 
   // 2) Remove Crewman
@@ -149,9 +164,9 @@ async function dischargeMember({ guild, me, actorTag, member, reason }) {
       CREWMAN_ROLE_ID,
       `Discharged by ${actorTag}: ${reason}`
     );
-    steps.push('discharged rate locker');
+    steps.push('Removed "SSN-780 Crewman"');
   } else {
-    steps.push("user isn't even a crewman 🥀.");
+    steps.push("Crewman role not present.");
   }
 
   // 3) Add Discharged
@@ -165,46 +180,73 @@ async function dischargeMember({ guild, me, actorTag, member, reason }) {
     steps.push("Discharged already present.");
   }
 
-  return { tag: member.user.tag, id: member.id, removedRoleNames, blockedRoleNames, steps };
+  return {
+    tag: member.user.tag,
+    id: member.id,
+    removedRoleNames,
+    blockedRoleNames,
+    steps,
+  };
 }
 
+//
 // ----------------------------
 // Discord client
 // ----------------------------
+//
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers],
 });
 
+//
+// ----------------------------
+// Slash commands
+// ----------------------------
+//
 const dischargeCmd = new SlashCommandBuilder()
   .setName("discharge")
   .setDescription(
-    'discharge a crewman, who has committed the SIN of INACTIVITY!'
+    'Discharge ONE member: remove configured roles + remove "SSN-780 Crewman" + add "Discharged".'
   )
   .addUserOption((opt) =>
     opt.setName("member").setDescription("Member to discharge").setRequired(true)
   )
+  .addStringOption((opt) =>
+    opt.setName("reason").setDescription("Optional reason").setRequired(false)
+  );
 
-const dischargeBulkCmd = new SlashCommandBuilder()
+const massDischargeCmd = new SlashCommandBuilder()
   .setName("massdischarge")
-  .setDescription("discharge multiple members!")
+  .setDescription("Discharge MULTIPLE members by pasting mentions/IDs (max 25).")
   .addStringOption((opt) =>
     opt
       .setName("members")
-      .setDescription("paste mentions and/or user IDs separated by spaces or lines")
+      .setDescription("Paste @mentions and/or user IDs, separated by spaces/lines")
       .setRequired(true)
   )
   .addStringOption((opt) =>
     opt.setName("reason").setDescription("Optional reason").setRequired(false)
   );
 
-async function registerCommands() {
-  const rest = new REST({ version: "10" }).setToken(TOKEN);
+//
+// ----------------------------
+// Command registration
+// - Clears GLOBAL commands to avoid duplicates
+// - Registers GUILD commands in every guild (fast appearance)
+// ----------------------------
+//
+async function clearGlobalCommands(rest) {
+  await rest.put(Routes.applicationCommands(client.user.id), { body: [] });
+  console.log("Cleared GLOBAL commands (to avoid duplicates).");
+}
 
-  // Build once
-  const body = [dischargeCmd.toJSON(), dischargeBulkCmd.toJSON()];
+async function registerGuildCommandsEverywhere() {
+  const rest = new REST({ version: "10" }).setToken(TOKEN);
+  const body = [dischargeCmd.toJSON(), massDischargeCmd.toJSON()];
 
   try {
-    // Register to every guild the bot is currently in (FAST appearance)
+    await clearGlobalCommands(rest);
+
     const guilds = await client.guilds.fetch();
     console.log(`Registering commands in ${guilds.size} guild(s)...`);
 
@@ -213,12 +255,9 @@ async function registerCommands() {
         await rest.put(Routes.applicationGuildCommands(client.user.id, guildId), {
           body,
         });
-        console.log(`registered commands in server ${guildId}`);
+        console.log(`✅ Registered commands in guild ${guildId}`);
       } catch (e) {
-        console.error(
-          `registered commands in server ${guildId}:`,
-          e?.rawError ?? e
-        );
+        console.error(`❌ Failed to register in guild ${guildId}:`, e?.rawError ?? e);
       }
     }
 
@@ -228,26 +267,37 @@ async function registerCommands() {
   }
 }
 
-
 client.once("ready", async () => {
   console.log(`Logged in as ${client.user.tag}`);
-  await registerCommands();
+  await registerGuildCommandsEverywhere();
 });
 
+//
+// ----------------------------
+// Interactions
+// ----------------------------
+//
 client.on("interactionCreate", async (interaction) => {
   if (!interaction.isChatInputCommand()) return;
 
-// Require role ONLY if used inside a guild
-if (interaction.inGuild()) {
-  if (!interaction.member?.roles?.cache?.has(REQUIRED_ROLE_ID)) {
+  // Only require the special role inside the MAIN guild.
+  if (interaction.inGuild() && interaction.guildId === MAIN_GUILD_ID) {
+    if (!interaction.member?.roles?.cache?.has(REQUIRED_ROLE_ID)) {
+      return interaction.reply({
+        content: "❌ You do not have permission to use this command in this server.",
+        ephemeral: true,
+      });
+    }
+  }
+
+  // Still require Manage Roles anywhere the command is used
+  if (!interaction.memberPermissions?.has(PermissionsBitField.Flags.ManageRoles)) {
     return interaction.reply({
-      content: "not an enlister, cannot discharge!",
+      content: "❌ You need **Manage Roles** to use this.",
       ephemeral: true,
     });
   }
-}
 
-  
   const guild = interaction.guild;
   if (!guild) {
     return interaction.reply({ content: "Guild not found.", ephemeral: true });
@@ -260,7 +310,7 @@ if (interaction.inGuild()) {
 
   if (!crewmanRole || !dischargedRole) {
     return interaction.reply({
-      content: "roles incorrect, notify hoffingson.",
+      content: "Role IDs are wrong or roles not found. Check your env role IDs.",
       ephemeral: true,
     });
   }
@@ -272,11 +322,12 @@ if (interaction.inGuild()) {
   ) {
     return interaction.reply({
       content:
-        'roles must be higher then ',
+        '❌ My highest role must be **above** both "SSN-780 Crewman" and "Discharged" roles to edit them.',
       ephemeral: true,
     });
   }
 
+  // /discharge
   if (interaction.commandName === "discharge") {
     const user = interaction.options.getUser("member", true);
     const reason = interaction.options.getString("reason") ?? "No reason provided";
@@ -286,7 +337,7 @@ if (interaction.inGuild()) {
       member = await guild.members.fetch(user.id);
     } catch {
       return interaction.reply({
-        content: "that member is NOT in this server",
+        content: "I couldn't find that member in this server.",
         ephemeral: true,
       });
     }
@@ -304,24 +355,31 @@ if (interaction.inGuild()) {
 
       const removed =
         result.removedRoleNames.length > 0
-          ? `\n- Removed configured roles: ${result.removedRoleNames.map((n) => `**${n}**`).join(", ")}`
+          ? `\n- Removed configured roles: ${result.removedRoleNames
+              .map((n) => `**${n}**`)
+              .join(", ")}`
           : "\n- No configured discharge roles removed";
 
       const blocked =
         result.blockedRoleNames.length > 0
-          ? `\n- Could not remove (hierarchy): ${result.blockedRoleNames.map((n) => `**${n}**`).join(", ")}`
+          ? `\n- Could not remove (hierarchy): ${result.blockedRoleNames
+              .map((n) => `**${n}**`)
+              .join(", ")}`
           : "";
 
       return interaction.editReply(
-        `done for **${result.tag}**${removed}${blocked}\n- ${result.steps.join("\n- ")}\n**Reason:** ${reason}`
+        `done for **${result.tag}**${removed}${blocked}\n- ${result.steps.join(
+          "\n- "
+        )}\n**Reason:** ${reason}`
       );
     } catch (err) {
       console.error(err);
-      return interaction.editReply("failed to edit roles (permissions or hierarchy issue).");
+      return interaction.editReply("Failed to edit roles (permissions or hierarchy issue).");
     }
   }
 
-  if (interaction.commandName === "dischargebulk") {
+  // /massdischarge
+  if (interaction.commandName === "massdischarge") {
     const membersText = interaction.options.getString("members", true);
     const reason = interaction.options.getString("reason") ?? "No reason provided";
 
@@ -329,7 +387,7 @@ if (interaction.inGuild()) {
     if (ids.length === 0) {
       return interaction.reply({
         content:
-          "i couldn't find any user IDs or @mentions in that text, paste mentions like `@User` or raw IDs!",
+          "I couldn't find any user IDs or @mentions in that text. Paste mentions like `@User` or raw IDs.",
         ephemeral: true,
       });
     }
@@ -362,7 +420,7 @@ if (interaction.inGuild()) {
         });
       } catch (err) {
         failures.push(id);
-        console.error(`Bulk discharge failed for ${id}:`, err);
+        console.error(`Mass discharge failed for ${id}:`, err);
       }
 
       await sleep(650);
@@ -371,7 +429,9 @@ if (interaction.inGuild()) {
     const lines = [];
     lines.push(`sweeped away the foolish rate lockers`);
     lines.push(`**Reason:** ${reason}`);
-    lines.push(`**Processed:** ${sliced.length}${extras ? ` (ignored extra ${extras})` : ""}`);
+    lines.push(
+      `**Processed:** ${sliced.length}${extras ? ` (ignored extra ${extras})` : ""}`
+    );
     lines.push(`**Success:** ${successes.length}`);
     lines.push(`**Failed:** ${failures.length}`);
 
@@ -379,10 +439,14 @@ if (interaction.inGuild()) {
       lines.push(`\n**Successes:**`);
       for (const s of successes.slice(0, 20)) {
         lines.push(
-          `- **${s.tag}** (removed roles: ${s.removed}${s.blocked ? `, blocked: ${s.blocked}` : ""})`
+          `- **${s.tag}** (removed roles: ${s.removed}${
+            s.blocked ? `, blocked: ${s.blocked}` : ""
+          })`
         );
       }
-      if (successes.length > 20) lines.push(`- ...and ${successes.length - 20} more`);
+      if (successes.length > 20) {
+        lines.push(`- ...and ${successes.length - 20} more`);
+      }
     }
 
     if (failures.length > 0) {
