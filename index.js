@@ -21,18 +21,16 @@ http
     console.log(`Health server listening on ${PORT}`);
   });
 
-
 const TOKEN = process.env.DISCORD_TOKEN;
-const GUILD_ID = process.env.GUILD_ID;
 const CREWMAN_ROLE_ID = process.env.CREWMAN_ROLE_ID;
 const DISCHARGED_ROLE_ID = process.env.DISCHARGED_ROLE_ID;
 
 // Role required to use the discharge commands
 const REQUIRED_ROLE_ID = "961288233856143421";
 
-if (!TOKEN || !GUILD_ID || !CREWMAN_ROLE_ID || !DISCHARGED_ROLE_ID) {
+if (!TOKEN || !CREWMAN_ROLE_ID || !DISCHARGED_ROLE_ID) {
   console.error(
-    "Missing .env values. Required: DISCORD_TOKEN, GUILD_ID, CREWMAN_ROLE_ID, DISCHARGED_ROLE_ID"
+    "Missing env values. Required: DISCORD_TOKEN, CREWMAN_ROLE_ID, DISCHARGED_ROLE_ID"
   );
   process.exit(1);
 }
@@ -129,20 +127,20 @@ async function dischargeMember({ guild, me, actorTag, member, reason }) {
     if (allowed.size > 0) {
       await member.roles.remove(
         allowed.map((r) => r.id),
-        `Discharged cleanup by ${actorTag}: ${reason}`
+        `discharged cleanup by ${actorTag}: ${reason}`
       );
       removedRoleNames.push(...allowed.map((r) => r.name));
-      steps.push(`Removed configured roles (${allowed.size})`);
+      steps.push(`removed configured roles (${allowed.size})`);
     } else {
-      steps.push("Configured roles present, but none removable (hierarchy).");
+      steps.push("configured roles present, but none removable (hierarchy).");
     }
 
     if (blocked.size > 0) {
       blockedRoleNames.push(...blocked.map((r) => r.name));
-      steps.push(`Blocked by hierarchy (${blocked.size})`);
+      steps.push(`blocked by role hierarchy (${blocked.size})`);
     }
   } else {
-    steps.push("No configured roles found to remove.");
+    steps.push("No roles actually found to configure yo");
   }
 
   // 2) Remove Crewman
@@ -151,9 +149,9 @@ async function dischargeMember({ guild, me, actorTag, member, reason }) {
       CREWMAN_ROLE_ID,
       `Discharged by ${actorTag}: ${reason}`
     );
-    steps.push('Removed "SSN-780 Crewman"');
+    steps.push('discharged rate locker');
   } else {
-    steps.push("Crewman role not present.");
+    steps.push("user isn't even a crewman 🥀.");
   }
 
   // 3) Add Discharged
@@ -167,13 +165,7 @@ async function dischargeMember({ guild, me, actorTag, member, reason }) {
     steps.push("Discharged already present.");
   }
 
-  return {
-    tag: member.user.tag,
-    id: member.id,
-    removedRoleNames,
-    blockedRoleNames,
-    steps,
-  };
+  return { tag: member.user.tag, id: member.id, removedRoleNames, blockedRoleNames, steps };
 }
 
 // ----------------------------
@@ -186,22 +178,19 @@ const client = new Client({
 const dischargeCmd = new SlashCommandBuilder()
   .setName("discharge")
   .setDescription(
-    'Discharge ONE member: remove configured roles + remove "SSN-780 Crewman" + add "Discharged".'
+    'discharge a crewman, who has committed the SIN of INACTIVITY!'
   )
   .addUserOption((opt) =>
     opt.setName("member").setDescription("Member to discharge").setRequired(true)
   )
-  .addStringOption((opt) =>
-    opt.setName("reason").setDescription("Optional reason").setRequired(false)
-  );
 
 const dischargeBulkCmd = new SlashCommandBuilder()
-  .setName("dischargebulk")
-  .setDescription("Discharge MULTIPLE members by pasting mentions/IDs (max 25).")
+  .setName("massdischarge")
+  .setDescription("discharge multiple members!")
   .addStringOption((opt) =>
     opt
       .setName("members")
-      .setDescription("Paste @mentions and/or user IDs, separated by spaces/lines")
+      .setDescription("paste mentions and/or user IDs separated by spaces or lines")
       .setRequired(true)
   )
   .addStringOption((opt) =>
@@ -209,11 +198,19 @@ const dischargeBulkCmd = new SlashCommandBuilder()
   );
 
 async function registerCommands() {
-  const rest = new REST({ version: "10" }).setToken(TOKEN);
-  await rest.put(Routes.applicationGuildCommands(client.user.id, GUILD_ID), {
-    body: [dischargeCmd.toJSON(), dischargeBulkCmd.toJSON()],
-  });
-  console.log("Slash commands registered.");
+  try {
+    const rest = new REST({ version: "10" }).setToken(TOKEN);
+
+    // GLOBAL command registration (no guild id needed)
+    await rest.put(Routes.applicationCommands(client.user.id), {
+      body: [dischargeCmd.toJSON(), dischargeBulkCmd.toJSON()],
+    });
+
+    console.log("Global slash commands registered (may take a while to appear).");
+  } catch (err) {
+    console.error("Slash command registration failed:", err?.rawError ?? err);
+    // Don't crash. Bot can still run and you can fix perms later.
+  }
 }
 
 client.once("ready", async () => {
@@ -224,22 +221,17 @@ client.once("ready", async () => {
 client.on("interactionCreate", async (interaction) => {
   if (!interaction.isChatInputCommand()) return;
 
-  // Require specific role to use the bot
+// Require role ONLY if used inside a guild
+if (interaction.inGuild()) {
   if (!interaction.member?.roles?.cache?.has(REQUIRED_ROLE_ID)) {
     return interaction.reply({
-      content: "❌ You do not have permission to use this command.",
+      content: "not an enlister, cannot discharge!",
       ephemeral: true,
     });
   }
+}
 
-  // Optional extra permission gate (keep or delete this)
-  if (!interaction.memberPermissions?.has(PermissionsBitField.Flags.ManageRoles)) {
-    return interaction.reply({
-      content: "❌ You need **Manage Roles** to use this.",
-      ephemeral: true,
-    });
-  }
-
+  
   const guild = interaction.guild;
   if (!guild) {
     return interaction.reply({ content: "Guild not found.", ephemeral: true });
@@ -252,7 +244,7 @@ client.on("interactionCreate", async (interaction) => {
 
   if (!crewmanRole || !dischargedRole) {
     return interaction.reply({
-      content: "Role IDs are wrong or roles not found. Check your .env role IDs.",
+      content: "roles incorrect, notify hoffingson.",
       ephemeral: true,
     });
   }
@@ -264,25 +256,21 @@ client.on("interactionCreate", async (interaction) => {
   ) {
     return interaction.reply({
       content:
-        '❌ My highest role must be **above** both "SSN-780 Crewman" and "Discharged" roles to edit them.',
+        'roles must be higher then ',
       ephemeral: true,
     });
   }
 
-  // ----------------------------
-  // /discharge (single)
-  // ----------------------------
   if (interaction.commandName === "discharge") {
     const user = interaction.options.getUser("member", true);
-    const reason =
-      interaction.options.getString("reason") ?? "No reason provided";
+    const reason = interaction.options.getString("reason") ?? "No reason provided";
 
     let member;
     try {
       member = await guild.members.fetch(user.id);
     } catch {
       return interaction.reply({
-        content: "I couldn't find that member in this server.",
+        content: "that member is NOT in this server",
         ephemeral: true,
       });
     }
@@ -300,49 +288,36 @@ client.on("interactionCreate", async (interaction) => {
 
       const removed =
         result.removedRoleNames.length > 0
-          ? `\n- Removed configured roles: ${result.removedRoleNames
-              .map((n) => `**${n}**`)
-              .join(", ")}`
+          ? `\n- Removed configured roles: ${result.removedRoleNames.map((n) => `**${n}**`).join(", ")}`
           : "\n- No configured discharge roles removed";
 
       const blocked =
         result.blockedRoleNames.length > 0
-          ? `\n- Could not remove (hierarchy): ${result.blockedRoleNames
-              .map((n) => `**${n}**`)
-              .join(", ")}`
+          ? `\n- Could not remove (hierarchy): ${result.blockedRoleNames.map((n) => `**${n}**`).join(", ")}`
           : "";
 
       return interaction.editReply(
-        `done for **${result.tag}**${removed}${blocked}\n- ${result.steps.join(
-          "\n- "
-        )}\n**Reason:** ${reason}`
+        `done for **${result.tag}**${removed}${blocked}\n- ${result.steps.join("\n- ")}\n**Reason:** ${reason}`
       );
     } catch (err) {
       console.error(err);
-      return interaction.editReply(
-        "Failed to edit roles (permissions, missing intents, or role hierarchy issue)."
-      );
+      return interaction.editReply("failed to edit roles (permissions or hierarchy issue).");
     }
   }
 
-  // ----------------------------
-  // /dischargebulk (bulk)
-  // ----------------------------
   if (interaction.commandName === "dischargebulk") {
     const membersText = interaction.options.getString("members", true);
-    const reason =
-      interaction.options.getString("reason") ?? "No reason provided";
+    const reason = interaction.options.getString("reason") ?? "No reason provided";
 
     const ids = extractUserIds(membersText);
     if (ids.length === 0) {
       return interaction.reply({
         content:
-          "I couldn't find any user IDs or @mentions in that text. Paste mentions like `@User` or raw IDs.",
+          "i couldn't find any user IDs or @mentions in that text, paste mentions like `@User` or raw IDs!",
         ephemeral: true,
       });
     }
 
-    // Safety limit
     const MAX = 25;
     const sliced = ids.slice(0, MAX);
     const extras = ids.length > MAX ? ids.length - MAX : 0;
@@ -351,8 +326,6 @@ client.on("interactionCreate", async (interaction) => {
 
     const successes = [];
     const failures = [];
-
-    // Small delay reduces risk of hitting role-edit rate limits
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
     for (const id of sliced) {
@@ -382,9 +355,7 @@ client.on("interactionCreate", async (interaction) => {
     const lines = [];
     lines.push(`sweeped away the foolish rate lockers`);
     lines.push(`**Reason:** ${reason}`);
-    lines.push(
-      `**Processed:** ${sliced.length}${extras ? ` (ignored extra ${extras})` : ""}`
-    );
+    lines.push(`**Processed:** ${sliced.length}${extras ? ` (ignored extra ${extras})` : ""}`);
     lines.push(`**Success:** ${successes.length}`);
     lines.push(`**Failed:** ${failures.length}`);
 
@@ -392,14 +363,10 @@ client.on("interactionCreate", async (interaction) => {
       lines.push(`\n**Successes:**`);
       for (const s of successes.slice(0, 20)) {
         lines.push(
-          `- **${s.tag}** (removed roles: ${s.removed}${
-            s.blocked ? `, blocked: ${s.blocked}` : ""
-          })`
+          `- **${s.tag}** (removed roles: ${s.removed}${s.blocked ? `, blocked: ${s.blocked}` : ""})`
         );
       }
-      if (successes.length > 20) {
-        lines.push(`- ...and ${successes.length - 20} more`);
-      }
+      if (successes.length > 20) lines.push(`- ...and ${successes.length - 20} more`);
     }
 
     if (failures.length > 0) {
