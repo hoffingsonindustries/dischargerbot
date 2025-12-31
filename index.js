@@ -206,7 +206,7 @@ const client = new Client({
 const dischargeCmd = new SlashCommandBuilder()
   .setName("discharge")
   .setDescription(
-    'Discharge ONE member: remove configured roles + remove "SSN-780 Crewman" + add "Discharged".'
+    'discharge the sinful rate locker'
   )
   .addUserOption((opt) =>
     opt.setName("member").setDescription("Member to discharge").setRequired(true)
@@ -217,16 +217,13 @@ const dischargeCmd = new SlashCommandBuilder()
 
 const massDischargeCmd = new SlashCommandBuilder()
   .setName("massdischarge")
-  .setDescription("Discharge MULTIPLE members by pasting mentions/IDs (max 25).")
+  .setDescription("all rate lockers end here.")
   .addStringOption((opt) =>
     opt
       .setName("members")
-      .setDescription("Paste @mentions and/or user IDs, separated by spaces/lines")
+      .setDescription("paste @mentions and/or user IDs, separated by spaces or lines")
       .setRequired(true)
   )
-  .addStringOption((opt) =>
-    opt.setName("reason").setDescription("Optional reason").setRequired(false)
-  );
 
 //
 // ----------------------------
