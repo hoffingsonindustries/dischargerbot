@@ -11,7 +11,7 @@ const {
 
 //
 // ----------------------------
-// Fly.io health server (prevents proxy timeouts)
+// this health server is the biggest shit ever made me rage bro
 // ----------------------------
 //
 const http = require("http");
@@ -35,8 +35,6 @@ const TOKEN = process.env.DISCORD_TOKEN;
 const CREWMAN_ROLE_ID = process.env.CREWMAN_ROLE_ID;
 const DISCHARGED_ROLE_ID = process.env.DISCHARGED_ROLE_ID;
 
-// Only enforce REQUIRED_ROLE_ID in this one guild.
-// (Other guilds can use the commands without having that role.)
 const MAIN_GUILD_ID = "961053793141784577";
 const REQUIRED_ROLE_ID = "961288233856143421";
 
@@ -47,11 +45,7 @@ if (!TOKEN || !CREWMAN_ROLE_ID || !DISCHARGED_ROLE_ID) {
   process.exit(1);
 }
 
-//
-// ----------------------------
-// CONFIG: explicit roles to remove on discharge
-// ----------------------------
-//
+// this const had me pissed off ngl
 const ROLES_TO_REMOVE_ON_DISCHARGE = [
   "961106083601063946",
   "961106279265353758",
@@ -95,11 +89,6 @@ const ROLES_TO_REMOVE_ON_DISCHARGE = [
 
 const KEEP_ROLE_IDS = new Set([DISCHARGED_ROLE_ID]);
 
-//
-// ----------------------------
-// Helpers
-// ----------------------------
-//
 function uniq(arr) {
   return [...new Set(arr)];
 }
@@ -108,12 +97,10 @@ function extractUserIds(text) {
   if (!text) return [];
   const ids = [];
 
-  // Mentions: <@123> or <@!123>
   const mentionRe = /<@!?(\d{15,25})>/g;
   let m;
   while ((m = mentionRe.exec(text)) !== null) ids.push(m[1]);
 
-  // Raw IDs (15-25 digits)
   const idRe = /\b(\d{15,25})\b/g;
   while ((m = idRe.exec(text)) !== null) ids.push(m[1]);
 
@@ -125,7 +112,6 @@ async function dischargeMember({ guild, me, actorTag, member, reason }) {
   const blockedRoleNames = [];
   const steps = [];
 
-  // 1) Remove configured roles (if present)
   const removableConfigured = member.roles.cache
     .filter((r) => r.id !== guild.id) // not @everyone
     .filter((r) => ROLES_TO_REMOVE_ON_DISCHARGE.includes(r.id))
@@ -158,7 +144,6 @@ async function dischargeMember({ guild, me, actorTag, member, reason }) {
     steps.push("No configured roles found to remove.");
   }
 
-  // 2) Remove Crewman
   if (member.roles.cache.has(CREWMAN_ROLE_ID)) {
     await member.roles.remove(
       CREWMAN_ROLE_ID,
@@ -169,7 +154,6 @@ async function dischargeMember({ guild, me, actorTag, member, reason }) {
     steps.push("Crewman role not present.");
   }
 
-  // 3) Add Discharged
   if (!member.roles.cache.has(DISCHARGED_ROLE_ID)) {
     await member.roles.add(
       DISCHARGED_ROLE_ID,
@@ -189,20 +173,10 @@ async function dischargeMember({ guild, me, actorTag, member, reason }) {
   };
 }
 
-//
-// ----------------------------
-// Discord client
-// ----------------------------
-//
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers],
 });
-
-//
-// ----------------------------
-// Slash commands
-// ----------------------------
-//
+// why does discord have to make slash commands so annoying?
 const dischargeCmd = new SlashCommandBuilder()
   .setName("discharge")
   .setDescription(
@@ -221,7 +195,7 @@ const massDischargeCmd = new SlashCommandBuilder()
   .addStringOption((opt) =>
     opt
       .setName("members")
-      .setDescription("paste @mentions and/or user IDs, separated by spaces or lines")
+      .setDescription("paste @mentions and/or user IDs, separated by spaces or lines. you can only discharge a max of 25 CREWMEN!")
       .setRequired(true)
   )
 
@@ -281,20 +255,12 @@ client.on("interactionCreate", async (interaction) => {
   if (interaction.inGuild() && interaction.guildId === MAIN_GUILD_ID) {
     if (!interaction.member?.roles?.cache?.has(REQUIRED_ROLE_ID)) {
       return interaction.reply({
-        content: "❌ You do not have permission to use this command in this server.",
+        content: "You do not have permission to use this command in this server.",
         ephemeral: true,
       });
     }
   }
-
-  // Still require Manage Roles anywhere the command is used
-  if (!interaction.memberPermissions?.has(PermissionsBitField.Flags.ManageRoles)) {
-    return interaction.reply({
-      content: "❌ You need **Manage Roles** to use this.",
-      ephemeral: true,
-    });
-  }
-
+  
   const guild = interaction.guild;
   if (!guild) {
     return interaction.reply({ content: "Guild not found.", ephemeral: true });
@@ -307,19 +273,19 @@ client.on("interactionCreate", async (interaction) => {
 
   if (!crewmanRole || !dischargedRole) {
     return interaction.reply({
-      content: "Role IDs are wrong or roles not found. Check your env role IDs.",
+      content: "env file error",
       ephemeral: true,
     });
   }
 
-  // Bot must be above the roles it will add/remove
+  // Bot must be above the roles it will add/remove or it errors
   if (
     crewmanRole.position >= me.roles.highest.position ||
     dischargedRole.position >= me.roles.highest.position
   ) {
     return interaction.reply({
       content:
-        '❌ My highest role must be **above** both "SSN-780 Crewman" and "Discharged" roles to edit them.',
+        'The highest role of I must be **above** both "Crewman" role (if you know what i mean) and "Discharged" roles to edit them.',
       ephemeral: true,
     });
   }
@@ -384,7 +350,7 @@ client.on("interactionCreate", async (interaction) => {
     if (ids.length === 0) {
       return interaction.reply({
         content:
-          "I couldn't find any user IDs or @mentions in that text. Paste mentions like `@User` or raw IDs.",
+          "I couldn't find any user IDs or @mentions in that text... Paste mentions like `@User` or raw IDs.",
         ephemeral: true,
       });
     }
