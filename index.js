@@ -34,13 +34,14 @@ http
 const TOKEN = process.env.DISCORD_TOKEN;
 const CREWMAN_ROLE_ID = process.env.CREWMAN_ROLE_ID;
 const DISCHARGED_ROLE_ID = process.env.DISCHARGED_ROLE_ID;
+const CIV_ROLE_ID = process.env.CIV_ROLE_ID;
 
 const MAIN_GUILD_ID = "961053793141784577";
 const REQUIRED_ROLE_ID = "961288233856143421";
 
-if (!TOKEN || !CREWMAN_ROLE_ID || !DISCHARGED_ROLE_ID) {
+if (!TOKEN || !CREWMAN_ROLE_ID || !DISCHARGED_ROLE_ID || !CIV_ROLE_ID) {
   console.error(
-    "Missing env values. Required: DISCORD_TOKEN, CREWMAN_ROLE_ID, DISCHARGED_ROLE_ID"
+    "Missing env values. Required: DISCORD_TOKEN, CREWMAN_ROLE_ID, DISCHARGED_ROLE_ID, CIV_ROLE_ID"
   );
   process.exit(1);
 }
@@ -161,7 +162,17 @@ async function dischargeMember({ guild, me, actorTag, member, reason }) {
     );
     steps.push('Added "Discharged"');
   } else {
-    steps.push("Discharged already present.");
+    steps.push("Discharged role already present.");
+  }
+
+  if (!member.roles.cache.has(CIV_ROLE_ID)) {
+    await member.roles.add(
+      CIV_ROLE_ID,
+      `Discharged by ${actorTag}: ${reason}`
+    );
+    steps.push('Added "Civillian"');
+  } else {
+    steps.push("Civillian role already present.");
   }
 
   return {
