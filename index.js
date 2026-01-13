@@ -196,9 +196,10 @@ const dischargeCmd = new SlashCommandBuilder()
   .addUserOption((opt) =>
     opt.setName("member").setDescription("Member to discharge").setRequired(true)
   )
-  .addStringOption((opt) =>
-    opt.setName("reason").setDescription("Optional reason").setRequired(false)
-  );
+//  .addStringOption((opt) =>
+//    opt.setName("reason").setDescription("Optional reason").setRequired(false)
+//  );
+// removed reason option until i have real functionality for it
 
 const massDischargeCmd = new SlashCommandBuilder()
   .setName("massdischarge")
