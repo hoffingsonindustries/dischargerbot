@@ -196,9 +196,10 @@ const dischargeCmd = new SlashCommandBuilder()
   .addUserOption((opt) =>
     opt.setName("member").setDescription("Member to discharge").setRequired(true)
   )
-  .addStringOption((opt) =>
-    opt.setName("reason").setDescription("Optional reason").setRequired(false)
-  );
+//  .addStringOption((opt) =>
+//    opt.setName("reason").setDescription("Optional reason").setRequired(false)
+//  );
+// removed reason option until i have real functionality for it
 
 const massDischargeCmd = new SlashCommandBuilder()
   .setName("massdischarge")
@@ -206,7 +207,7 @@ const massDischargeCmd = new SlashCommandBuilder()
   .addStringOption((opt) =>
     opt
       .setName("members")
-      .setDescription("paste @mentions and/or user IDs, separated by spaces or lines. you can only discharge a max of 25 CREWMEN!")
+      .setDescription("paste @mentions and/or user IDs, separated by spaces or lines. MAX DISCHARGE AMOUNT IS 25 CREWMEN")
       .setRequired(true)
   )
 
@@ -361,7 +362,7 @@ client.on("interactionCreate", async (interaction) => {
     if (ids.length === 0) {
       return interaction.reply({
         content:
-          "I couldn't find any user IDs or @mentions in that text... Paste mentions like `@User` or raw IDs.",
+          "brotato chip there was NOTHING i could find in that text. please provide at least one valid user mention or ID.",
         ephemeral: true,
       });
     }
