@@ -7,6 +7,8 @@ const {
   Routes,
   SlashCommandBuilder,
   PermissionsBitField,
+  ActivityType,
+  PresenceUpdateStatus,
 } = require("discord.js");
 
 //
