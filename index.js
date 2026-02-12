@@ -203,14 +203,7 @@ const dischargeCmd = new SlashCommandBuilder()
 //  );
 // removed reason option until i have real functionality for it
 
-client.user.setPresence({
-        activities: [{
-            name: 'inactive crewmen', // The text displayed in the status
-            type: ActivityType.Watching // The type of activity (e.g., Playing, Watching)
-        }],
-        status: PresenceUpdateStatus.Online, // The bot's online status
-    });
-});
+client.once('ready',
 
 const massDischargeCmd = new SlashCommandBuilder()
   .setName("massdischarge")
@@ -222,6 +215,15 @@ const massDischargeCmd = new SlashCommandBuilder()
       .setRequired(true)
   )
 
+client.once('ready', () => {
+    client.user.setPresence({
+        activities: [{
+            name: 'with discord.js', // The text displayed in the status
+            type: ActivityType.Playing // The type of activity (e.g., Playing, Watching)
+        }],
+        status: PresenceUpdateStatus.Online, // The bot's online status
+    });
+});
 
 async function clearGlobalCommands(rest) {
   await rest.put(Routes.applicationCommands(client.user.id), { body: [] });
