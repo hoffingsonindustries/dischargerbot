@@ -145,6 +145,8 @@ async function dischargeMember({ guild, me, actorTag, member, reason }) {
     steps.push("No configured roles found to remove.");
   }
 
+    await member.setNickname('Discharged for Inactivity', 'inactivity lmao')
+  
   if (member.roles.cache.has(CREWMAN_ROLE_ID)) {
     await member.roles.remove(
       CREWMAN_ROLE_ID,
