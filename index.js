@@ -1,4 +1,4 @@
-// index.js
+w// index.js
 require("dotenv").config();
 const {
   Client,
@@ -218,8 +218,8 @@ const massDischargeCmd = new SlashCommandBuilder()
 client.once('ready', () => {
     client.user.setPresence({
         activities: [{
-            name: 'with discord.js', // The text displayed in the status
-            type: ActivityType.Playing // The type of activity (e.g., Playing, Watching)
+            name: 'inactive crewmen', // The text displayed in the status
+            type: ActivityType.Watching // The type of activity (e.g., Playing, Watching)
         }],
         status: PresenceUpdateStatus.Online, // The bot's online status
     });
