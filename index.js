@@ -201,6 +201,10 @@ const dischargeCmd = new SlashCommandBuilder()
 //  );
 // removed reason option until i have real functionality for it
 
+client.once("ready", () => {
+  client.user.setActivity('inactive crewmen.', { type: ActivityType.Watching });
+});
+
 const massDischargeCmd = new SlashCommandBuilder()
   .setName("massdischarge")
   .setDescription("all rate lockers end here.")
@@ -211,13 +215,7 @@ const massDischargeCmd = new SlashCommandBuilder()
       .setRequired(true)
   )
 
-//
-// ----------------------------
-// Command registration
-// - Clears GLOBAL commands to avoid duplicates
-// - Registers GUILD commands in every guild (fast appearance)
-// ----------------------------
-//
+
 async function clearGlobalCommands(rest) {
   await rest.put(Routes.applicationCommands(client.user.id), { body: [] });
   console.log("Cleared GLOBAL commands (to avoid duplicates).");
@@ -257,17 +255,16 @@ client.once("ready", async () => {
 
 //
 // ----------------------------
-// Interactions
+// Interactions :D
 // ----------------------------
 //
 client.on("interactionCreate", async (interaction) => {
   if (!interaction.isChatInputCommand()) return;
 
-  // Only require the special role inside the MAIN guild.
   if (interaction.inGuild() && interaction.guildId === MAIN_GUILD_ID) {
     if (!interaction.member?.roles?.cache?.has(REQUIRED_ROLE_ID)) {
       return interaction.reply({
-        content: "You do not have permission to use this command in this server.",
+        content: "You are not allowed to use ts command",
         ephemeral: true,
       });
     }
@@ -290,7 +287,7 @@ client.on("interactionCreate", async (interaction) => {
     });
   }
 
-  // Bot must be above the roles it will add/remove or it errors
+  // Bot must be above the roles it will add/remove or it errors trust me it was annoying
   if (
     crewmanRole.position >= me.roles.highest.position ||
     dischargedRole.position >= me.roles.highest.position
