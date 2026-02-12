@@ -203,8 +203,6 @@ const dischargeCmd = new SlashCommandBuilder()
 //  );
 // removed reason option until i have real functionality for it
 
-client.once('ready',
-
 const massDischargeCmd = new SlashCommandBuilder()
   .setName("massdischarge")
   .setDescription("all rate lockers end here.")
