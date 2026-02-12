@@ -46,7 +46,7 @@ if (!TOKEN || !CREWMAN_ROLE_ID || !DISCHARGED_ROLE_ID || !CIV_ROLE_ID) {
   process.exit(1);
 }
 
-// this const had me pissed off ngl
+// this had me pissed off ngl
 const ROLES_TO_REMOVE_ON_DISCHARGE = [
   "961106083601063946",
   "961106279265353758",
@@ -203,8 +203,13 @@ const dischargeCmd = new SlashCommandBuilder()
 //  );
 // removed reason option until i have real functionality for it
 
-client.once("ready", () => {
-  client.user.setActivity('inactive crewmen.', { type: ActivityType.Watching });
+client.user.setPresence({
+        activities: [{
+            name: 'inactive crewmen', // The text displayed in the status
+            type: ActivityType.Watching // The type of activity (e.g., Playing, Watching)
+        }],
+        status: PresenceUpdateStatus.Online, // The bot's online status
+    });
 });
 
 const massDischargeCmd = new SlashCommandBuilder()
