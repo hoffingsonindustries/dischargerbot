@@ -169,6 +169,15 @@ async function dischargeMember({ guild, me, actorTag, member, reason }) {
     steps.push("Discharged role already present.");
   }
 
+  if (!member.roles.cache.has(DISCHARGED_ROLE_ID)) {
+    await member.roles.add(
+      DISCHARGED_ROLE_ID,
+      `Attempted to add discharge role again. Maybe check if the role wasn't properly added?`
+    );
+    steps.push('added role again, possibly check if something happened.')
+  } else {
+    steps.push("Discharged role has already been properly added, no need to check roles.")
+
   if (!member.roles.cache.has(CIV_ROLE_ID)) {
     await member.roles.add(
       CIV_ROLE_ID,
@@ -178,6 +187,16 @@ async function dischargeMember({ guild, me, actorTag, member, reason }) {
   } else {
     steps.push("Civillian role already present.");
   }
+
+  if (!member.roles.cache.has(CIV_ROLE_ID)) {
+    await member.roles.add(
+      CIV_ROLE_ID,
+      `Attempted to add discharge role again. Maybe check if the role wasn't properly added?`
+    );
+    steps.push('added role again, possibly check if something happened.')
+  } else {
+    steps.push("Civillian role has already been properly added, no need to check roles.")
+    
 
   return {
     tag: member.user.tag,
@@ -362,7 +381,6 @@ client.on("interactionCreate", async (interaction) => {
   // /massdischarge
   if (interaction.commandName === "massdischarge") {
     const membersText = interaction.options.getString("members", true);
-    const reason = interaction.options.getString("reason") ?? "No reason provided";
 
     const ids = extractUserIds(membersText);
     if (ids.length === 0) {
@@ -409,7 +427,6 @@ client.on("interactionCreate", async (interaction) => {
 
     const lines = [];
     lines.push(`sweeped away the foolish rate lockers`);
-    lines.push(`**Reason:** ${reason}`);
     lines.push(
       `**Processed:** ${sliced.length}${extras ? ` (ignored extra ${extras})` : ""}`
     );
