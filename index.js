@@ -172,7 +172,6 @@ async function dischargeMember({ guild, me, actorTag, member, reason }) {
   if (!member.roles.cache.has(DISCHARGED_ROLE_ID)) {
     await member.roles.add(
       DISCHARGED_ROLE_ID,
-      `Attempted to add discharge role again. Maybe check if the role wasn't properly added?`
     );
     steps.push('added role again, possibly check if something happened.')
   } else {
@@ -191,7 +190,6 @@ async function dischargeMember({ guild, me, actorTag, member, reason }) {
   if (!member.roles.cache.has(CIV_ROLE_ID)) {
     await member.roles.add(
       CIV_ROLE_ID,
-      `Attempted to add discharge role again. Maybe check if the role wasn't properly added?`
     );
     steps.push('added role again, possibly check if something happened.')
   } else {
@@ -222,7 +220,7 @@ const dischargeCmd = new SlashCommandBuilder()
 //  .addStringOption((opt) =>
 //    opt.setName("reason").setDescription("Optional reason").setRequired(false)
 //  );
-// removed reason option until i have real functionality for it
+// removed reason option until i have real functionality for it (waiting for command approval)
 
 const massDischargeCmd = new SlashCommandBuilder()
   .setName("massdischarge")
@@ -237,10 +235,10 @@ const massDischargeCmd = new SlashCommandBuilder()
 client.once('ready', () => {
     client.user.setPresence({
         activities: [{
-            name: 'inactive crewmen', // The text displayed in the status
-            type: ActivityType.Watching // The type of activity (e.g., Playing, Watching)
+            name: 'inactive crewmen',
+            type: ActivityType.Watching
         }],
-        status: PresenceUpdateStatus.Online, // The bot's online status
+        status: PresenceUpdateStatus.Online,
     });
 });
 
