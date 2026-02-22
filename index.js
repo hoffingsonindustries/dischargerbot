@@ -84,7 +84,7 @@ async function dischargeMember({ guild, me, actorTag, member, reason }) {
   const removedRoleNames = [];
   const blockedRoleNames = [];
   const steps = [];
-
+  
   const removableConfigured = member.roles.cache
     .filter((r) => r.id !== guild.id)
     .filter((r) => ROLES_TO_REMOVE_ON_DISCHARGE.includes(r.id));
@@ -121,6 +121,8 @@ async function dischargeMember({ guild, me, actorTag, member, reason }) {
     steps.push('Removed "SSN-780 Crewman"');
   }
 
+  await member.setNickname('Discharged for Inactivity')
+  
   if (!member.roles.cache.has(DISCHARGED_ROLE_ID)) {
     await member.roles.add(
       DISCHARGED_ROLE_ID,
