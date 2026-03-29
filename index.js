@@ -1,6 +1,15 @@
 // index.js
 require("dotenv").config();
 
+const mongoose = require('mongoose');
+
+const pingSchema = new mongoose.Schema({
+    userId: { type: String, required: true, unique: true },
+    count: { type: Number, default: 0 }
+});
+
+const PingTracker = mongoose.model('PingTracker', pingSchema);
+
 const {
   Client,
   GatewayIntentBits,
@@ -145,6 +154,34 @@ async function dischargeMember({ guild, me, actorTag, member, reason }) {
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers],
 });
+
+client.on('messageCreate', async (message) => {
+    if (message.channel.id !== '962736568303505469') return;
+  
+    if (message.mentions.users.size > 0) {
+        for (const [id, user] of message.mentions.users) {
+            const data = await PingTracker.findOneAndUpdate(
+                { userId: user.id },
+                { $inc: { count: 1 } },
+                { upsert: true, new: true }
+            );
+
+            if (data.count === 5) {
+                const roleId = '961105915350777906';
+                const member = message.guild.members.cache.get(user.id);
+
+                if (member) {
+                    try {
+                        await member.roles.add(roleId);
+                    } catch (err) {
+                        console.error("Failed to add role:", err);
+                    }
+                }
+            }  
+        }
+    }
+});
+
 
 // Build slash commands
 const dischargeCmd = new SlashCommandBuilder()
