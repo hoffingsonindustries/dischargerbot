@@ -1,15 +1,6 @@
 // index.js
 require("dotenv").config();
 
-const mongoose = require('mongoose');
-
-const pingSchema = new mongoose.Schema({
-    userId: { type: String, required: true, unique: true },
-    count: { type: Number, default: 0 }
-});
-
-const PingTracker = mongoose.model('PingTracker', pingSchema);
-
 const {
   Client,
   GatewayIntentBits,
@@ -19,6 +10,14 @@ const {
   PermissionFlagsBits,
   EmbedBuilder,
 } = require("discord.js");
+
+const mongoose = require('mongoose');
+
+const pingSchema = new mongoose.Schema({
+    userId: { type: String, required: true, unique: true },
+    count: { type: Number, default: 0 }
+});
+const PingTracker = mongoose.model('PingTracker', pingSchema);
 
 const TOKEN = process.env.DISCORD_TOKEN;
 const CREWMAN_ROLE_ID = process.env.CREWMAN_ROLE_ID;
