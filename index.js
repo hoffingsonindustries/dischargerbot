@@ -24,11 +24,12 @@ const CREWMAN_ROLE_ID = process.env.CREWMAN_ROLE_ID;
 const DISCHARGED_ROLE_ID = process.env.DISCHARGED_ROLE_ID;
 const CIV_ROLE_ID = process.env.CIV_ROLE_ID;
 const LOG_CHANNEL_ID = process.env.LOG_CHANNEL_ID;
+const BOARD_OF_COMMAND = process.env.BOARD_OF_COMMAND;
 const MONGODB_URI = process.env.MONGODB;
 
-if (!TOKEN || !CREWMAN_ROLE_ID || !DISCHARGED_ROLE_ID || !CIV_ROLE_ID || !LOG_CHANNEL_ID) {
+if (!TOKEN || !CREWMAN_ROLE_ID || !DISCHARGED_ROLE_ID || !CIV_ROLE_ID || !LOG_CHANNEL_ID || !MONGODB_URI) {
   console.error(
-    "Missing env values. Required: DISCORD_TOKEN, CREWMAN_ROLE_ID, DISCHARGED_ROLE_ID, CIV_ROLE_ID, LOG_CHANNEL_ID"
+    "Missing env values. Required: DISCORD_TOKEN, CREWMAN_ROLE_ID, DISCHARGED_ROLE_ID, CIV_ROLE_ID, LOG_CHANNEL_ID, MONGODB_URI"
   );
   process.exit(1);
 }
@@ -179,10 +180,8 @@ client.on('messageCreate', async (message) => {
                     const member = await message.guild.members.fetch(user.id);
                     if (member) {
                         if (!member.roles.cache.has(roleId)) {
-                            await member.roles.add(roleId);
-                            const logChannel = message.guild.channels.cache.get(LOG_CHANNEL_ID);
-                            await logChannel.send(`good morning, because i lack the intelligence to properly change the nickname of somebody, i request that somebody may assist me in the nickname change of ${user} to be a PO3.`); // fixed missing ) and ;
-                            console.log(`Added role to ${user.tag} for 10th ping.`);
+                            const commandChannel = message.guild.channels.cache.get(BOARD_OF_COMMAND);
+                            await commandChannel.send(`yo hello saner or mitchell or belgrade there's this guy who attended 10 events now so give ${user} po3 if you think they deserve it`);
                         }
                     }
                 } catch (err) {
