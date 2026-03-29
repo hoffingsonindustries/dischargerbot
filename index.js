@@ -24,6 +24,7 @@ const CREWMAN_ROLE_ID = process.env.CREWMAN_ROLE_ID;
 const DISCHARGED_ROLE_ID = process.env.DISCHARGED_ROLE_ID;
 const CIV_ROLE_ID = process.env.CIV_ROLE_ID;
 const LOG_CHANNEL_ID = process.env.LOG_CHANNEL_ID;
+const logChannel = guild.channels.cache.get(LOG_CHANNEL_ID);
 const MONGODB_URI = process.env.MONGODB;
 
 if (!TOKEN || !CREWMAN_ROLE_ID || !DISCHARGED_ROLE_ID || !CIV_ROLE_ID || !LOG_CHANNEL_ID) {
@@ -173,14 +174,17 @@ client.on('messageCreate', async (message) => {
                 { upsert: true, new: true }
             );
             console.log(`${user.tag} ping count: ${data.count}`);
-            if (data.count >= 5) {
+            if (data.count >= 10) {
                 const roleId = '961105915350777906';
                 
                 try {
                     const member = await message.guild.members.fetch(user.id);
                     if (member) {
+                      if (!member.roles.cache.has(roleId) {
                         await member.roles.add(roleId);
+                        logChannel.send(`good morning, because i lack the intelligence to properly change the nickname of somebody, i request that somebody may assist me in the nickname change of ${user} to be a PO3.`
                         console.log(`Added role to ${user.tag} for 5th ping.`);
+                      }
                     }
                 } catch (err) {
                     console.error("Failed to add role or fetch member:", err);
@@ -247,8 +251,6 @@ client.on("interactionCreate", async (interaction) => {
   const guild = interaction.guild;
   const me = await guild.members.fetchMe();
 
-  // fetch logging channel
-  const logChannel = guild.channels.cache.get(LOG_CHANNEL_ID);
 
   // /discharge
   if (interaction.commandName === "discharge") {
