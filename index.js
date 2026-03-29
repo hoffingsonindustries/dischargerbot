@@ -236,7 +236,7 @@ async function registerCommands() {
   }
 }
 
-mongoose.connect(process.env.MONGODB)
+mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log("Connected to MongoDB Database"))
   .catch((err) => console.error("Could not connect to MongoDB:", err));
 client.once("ready", async () => {
