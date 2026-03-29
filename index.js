@@ -242,6 +242,10 @@ mongoose.connect('mongodb://localhost:27017', {
   .catch((err) => console.error("Could not connect to MongoDB:", err));
 client.once("ready", async () => {
   console.log(`Logged in as ${client.user.tag}`);
+  client.user.setPresence({
+    activities: [{ name: 'punishing inactivity and rewarding activity', type: ActivityType.Watching }],
+    status: 'online'
+  });
   await registerCommands();
 });
 
