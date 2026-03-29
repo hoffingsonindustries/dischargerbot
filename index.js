@@ -24,6 +24,7 @@ const CREWMAN_ROLE_ID = process.env.CREWMAN_ROLE_ID;
 const DISCHARGED_ROLE_ID = process.env.DISCHARGED_ROLE_ID;
 const CIV_ROLE_ID = process.env.CIV_ROLE_ID;
 const LOG_CHANNEL_ID = process.env.LOG_CHANNEL_ID;
+const MONGODB_URI = process.env.MONGODB;
 
 if (!TOKEN || !CREWMAN_ROLE_ID || !DISCHARGED_ROLE_ID || !CIV_ROLE_ID || !LOG_CHANNEL_ID) {
   console.error(
@@ -151,8 +152,14 @@ async function dischargeMember({ guild, me, actorTag, member, reason }) {
 }
 
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers],
+  intents: [
+    GatewayIntentBits.Guilds, 
+    GatewayIntentBits.GuildMembers, 
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent
+  ],
 });
+
 
 client.on('messageCreate', async (message) => {
     if (message.channel.id !== '962736568303505469') return;
@@ -167,19 +174,22 @@ client.on('messageCreate', async (message) => {
 
             if (data.count === 5) {
                 const roleId = '961105915350777906';
-                const member = message.guild.members.cache.get(user.id);
-
-                if (member) {
-                    try {
+                
+                try {
+                    // Fetch the member from the guild to ensure they are found
+                    const member = await message.guild.members.fetch(user.id);
+                    if (member) {
                         await member.roles.add(roleId);
-                    } catch (err) {
-                        console.error("Failed to add role:", err);
+                        console.log(`Added role to ${user.tag} for 5th ping.`);
                     }
+                } catch (err) {
+                    console.error("Failed to add role or fetch member:", err);
                 }
             }  
         }
     }
 });
+
 
 
 // Build slash commands
@@ -222,6 +232,11 @@ async function registerCommands() {
     console.error("Failed to register commands:", err);
   }
 }
+
+mongoose.connect(process.env.MONGODB)
+  .then(() => console.log("Connected to MongoDB Database"))
+  .catch((err) => console.error("Could not connect to MongoDB:", err));
+
 
 client.once("ready", async () => {
   console.log(`Logged in as ${client.user.tag}`);
