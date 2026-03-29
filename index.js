@@ -175,20 +175,20 @@ client.on('messageCreate', async (message) => {
             console.log(`${user.tag} ping count: ${data.count}`);
             if (data.count >= 10) {
                 const roleId = '961105915350777906';
-                
                 try {
                     const member = await message.guild.members.fetch(user.id);
                     if (member) {
-                      if (!member.roles.cache.has(roleId) {
-                        await member.roles.add(roleId);
-                        logChannel.send(`good morning, because i lack the intelligence to properly change the nickname of somebody, i request that somebody may assist me in the nickname change of ${user} to be a PO3.`
-                        console.log(`Added role to ${user.tag} for 5th ping.`);
-                      }
+                        if (!member.roles.cache.has(roleId)) {
+                            await member.roles.add(roleId);
+                            const logChannel = message.guild.channels.cache.get(LOG_CHANNEL_ID);
+                            await logChannel.send(`good morning, because i lack the intelligence to properly change the nickname of somebody, i request that somebody may assist me in the nickname change of ${user} to be a PO3.`); // fixed missing ) and ;
+                            console.log(`Added role to ${user.tag} for 10th ping.`);
+                        }
                     }
                 } catch (err) {
                     console.error("Failed to add role or fetch member:", err);
                 }
-            }  
+            }
         }
     }
 });
