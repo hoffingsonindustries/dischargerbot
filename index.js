@@ -162,8 +162,9 @@ const client = new Client({
 
 
 client.on('messageCreate', async (message) => {
+    console.log(`Message in ${message.channel.id}`);
     if (message.channel.id !== '962736568303505469') return;
-  
+    console.log(`Mentions: ${message.mentions.users.size}`);
     if (message.mentions.users.size > 0) {
         for (const [id, user] of message.mentions.users) {
             const data = await PingTracker.findOneAndUpdate(
@@ -171,12 +172,11 @@ client.on('messageCreate', async (message) => {
                 { $inc: { count: 1 } },
                 { upsert: true, new: true }
             );
-
-            if (data.count === 5) {
+            console.log(`${user.tag} ping count: ${data.count}`);
+            if (data.count >= 5) {
                 const roleId = '961105915350777906';
                 
                 try {
-                    // Fetch the member from the guild to ensure they are found
                     const member = await message.guild.members.fetch(user.id);
                     if (member) {
                         await member.roles.add(roleId);
@@ -236,8 +236,6 @@ async function registerCommands() {
 mongoose.connect(process.env.MONGODB)
   .then(() => console.log("Connected to MongoDB Database"))
   .catch((err) => console.error("Could not connect to MongoDB:", err));
-
-
 client.once("ready", async () => {
   console.log(`Logged in as ${client.user.tag}`);
   await registerCommands();
