@@ -24,7 +24,6 @@ const CREWMAN_ROLE_ID = process.env.CREWMAN_ROLE_ID;
 const DISCHARGED_ROLE_ID = process.env.DISCHARGED_ROLE_ID;
 const CIV_ROLE_ID = process.env.CIV_ROLE_ID;
 const LOG_CHANNEL_ID = process.env.LOG_CHANNEL_ID;
-const logChannel = guild.channels.cache.get(LOG_CHANNEL_ID);
 const MONGODB_URI = process.env.MONGODB;
 
 if (!TOKEN || !CREWMAN_ROLE_ID || !DISCHARGED_ROLE_ID || !CIV_ROLE_ID || !LOG_CHANNEL_ID) {
@@ -250,7 +249,7 @@ client.on("interactionCreate", async (interaction) => {
 
   const guild = interaction.guild;
   const me = await guild.members.fetchMe();
-
+  const logChannel = guild.channels.cache.get(LOG_CHANNEL_ID);
 
   // /discharge
   if (interaction.commandName === "discharge") {
