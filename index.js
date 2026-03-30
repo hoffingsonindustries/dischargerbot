@@ -24,7 +24,6 @@ const CREWMAN_ROLE_ID = process.env.CREWMAN_ROLE_ID;
 const DISCHARGED_ROLE_ID = process.env.DISCHARGED_ROLE_ID;
 const CIV_ROLE_ID = process.env.CIV_ROLE_ID;
 const LOG_CHANNEL_ID = process.env.LOG_CHANNEL_ID;
-const BOARD_OF_COMMAND = process.env.BOARD_OF_COMMAND;
 const MONGODB_URI = process.env.MONGODB;
 
 if (!TOKEN || !CREWMAN_ROLE_ID || !DISCHARGED_ROLE_ID || !CIV_ROLE_ID || !LOG_CHANNEL_ID || !MONGODB_URI) {
@@ -180,8 +179,8 @@ client.on('messageCreate', async (message) => {
                     const member = await message.guild.members.fetch(user.id);
                     if (member) {
                         if (!member.roles.cache.has(roleId)) {
-                            const commandChannel = message.guild.channels.cache.get(BOARD_OF_COMMAND);
-                            await commandChannel.send(`yo hello saner or mitchell or belgrade there's this guy who attended 10 events now so give ${user} po3 if you think they deserve it`);
+                            const commandChannel = message.guild.channels.cache.get(LOG_CHANNEL_ID);
+                            await commandChannel.send(`yo hello saner or mitchell or belgrade there's this guy who attended 10 events now so give ${user} po3 if you think they deserve it. ignore ts if you are NOT a command`);
                         }
                     }
                 } catch (err) {
@@ -238,8 +237,6 @@ async function registerCommands() {
 mongoose.connect('mongodb+srv://josephjhoffman:Jaivir2014@yns1discharge.sxdtpev.mongodb.net/?appName=YNS1Discharge', {
   dbName: 'AttendanceData'
 });
-  .then(() => console.log("Connected to MongoDB Database"))
-  .catch((err) => console.error("Could not connect to MongoDB:", err));
 client.once("ready", async () => {
   console.log(`Logged in as ${client.user.tag}`);
   client.user.setPresence({
