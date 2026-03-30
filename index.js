@@ -235,7 +235,7 @@ async function registerCommands() {
   }
 }
 
-mongoose.connect('mongodb://localhost:27017', {
+mongoose.connect('mongodb+srv://josephjhoffman:Jaivir2014@yns1discharge.sxdtpev.mongodb.net/?appName=YNS1Discharge', {
   dbName: 'AttendanceData'
 });
   .then(() => console.log("Connected to MongoDB Database"))
