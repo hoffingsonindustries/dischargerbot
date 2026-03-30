@@ -170,7 +170,7 @@ client.on('messageCreate', async (message) => {
                                 .setStyle(ButtonStyle.Danger)
                         );
                         await commandChannel.send({
-                            content: `${user} has attended 10 events. Grant promotion??`,
+                            content: `${user} has attended 10 events. Grant promotion? <@&961096468897362010>`,
                             components: [row]
                         });
                     }
