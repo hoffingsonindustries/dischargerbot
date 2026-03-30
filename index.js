@@ -26,7 +26,7 @@ const CREWMAN_ROLE_ID = process.env.CREWMAN_ROLE_ID;
 const DISCHARGED_ROLE_ID = process.env.DISCHARGED_ROLE_ID;
 const CIV_ROLE_ID = process.env.CIV_ROLE_ID;
 const LOG_CHANNEL_ID = process.env.LOG_CHANNEL_ID;
-const MONGODB_URI = process.env.MONGODB;
+const MONGODB_URI = process.env.MONGODB_URI;
 
 if (!TOKEN || !CREWMAN_ROLE_ID || !DISCHARGED_ROLE_ID || !CIV_ROLE_ID || !LOG_CHANNEL_ID || !MONGODB_URI) {
   console.error("Missing env values. Required: DISCORD_TOKEN, CREWMAN_ROLE_ID, DISCHARGED_ROLE_ID, CIV_ROLE_ID, LOG_CHANNEL_ID, MONGODB_URI");
