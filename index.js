@@ -1,4 +1,3 @@
-// index.js
 require("dotenv").config();
 
 const {
@@ -9,6 +8,9 @@ const {
   SlashCommandBuilder,
   PermissionFlagsBits,
   EmbedBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
 } = require("discord.js");
 
 const mongoose = require('mongoose');
@@ -27,9 +29,7 @@ const LOG_CHANNEL_ID = process.env.LOG_CHANNEL_ID;
 const MONGODB_URI = process.env.MONGODB;
 
 if (!TOKEN || !CREWMAN_ROLE_ID || !DISCHARGED_ROLE_ID || !CIV_ROLE_ID || !LOG_CHANNEL_ID || !MONGODB_URI) {
-  console.error(
-    "Missing env values. Required: DISCORD_TOKEN, CREWMAN_ROLE_ID, DISCHARGED_ROLE_ID, CIV_ROLE_ID, LOG_CHANNEL_ID, MONGODB_URI"
-  );
+  console.error("Missing env values. Required: DISCORD_TOKEN, CREWMAN_ROLE_ID, DISCHARGED_ROLE_ID, CIV_ROLE_ID, LOG_CHANNEL_ID, MONGODB_URI");
   process.exit(1);
 }
 
@@ -99,18 +99,11 @@ async function dischargeMember({ guild, me, actorTag, member, reason }) {
     .filter((r) => ROLES_TO_REMOVE_ON_DISCHARGE.includes(r.id));
 
   if (removableConfigured.size > 0) {
-    const allowed = removableConfigured.filter(
-      (r) => r.position < me.roles.highest.position
-    );
-    const blocked = removableConfigured.filter(
-      (r) => r.position >= me.roles.highest.position
-    );
+    const allowed = removableConfigured.filter((r) => r.position < me.roles.highest.position);
+    const blocked = removableConfigured.filter((r) => r.position >= me.roles.highest.position);
 
     if (allowed.size > 0) {
-      await member.roles.remove(
-        allowed.map((r) => r.id),
-        `Discharged cleanup by ${actorTag}: ${reason}`
-      );
+      await member.roles.remove(allowed.map((r) => r.id), `Discharged cleanup by ${actorTag}: ${reason}`);
       removedRoleNames.push(...allowed.map((r) => r.name));
       steps.push(`Removed configured roles (${allowed.size})`);
     }
@@ -123,28 +116,19 @@ async function dischargeMember({ guild, me, actorTag, member, reason }) {
   }
 
   if (member.roles.cache.has(CREWMAN_ROLE_ID)) {
-    await member.roles.remove(
-      CREWMAN_ROLE_ID,
-      `Discharged by ${actorTag}: ${reason}`
-    );
+    await member.roles.remove(CREWMAN_ROLE_ID, `Discharged by ${actorTag}: ${reason}`);
     steps.push('Removed "SSN-780 Crewman"');
   }
 
-  await member.setNickname('Discharged for Inactivity')
+  await member.setNickname('Discharged for Inactivity');
   
   if (!member.roles.cache.has(DISCHARGED_ROLE_ID)) {
-    await member.roles.add(
-      DISCHARGED_ROLE_ID,
-      `Discharged by ${actorTag}: ${reason}`
-    );
+    await member.roles.add(DISCHARGED_ROLE_ID, `Discharged by ${actorTag}: ${reason}`);
     steps.push('Added "Discharged"');
   }
 
   if (!member.roles.cache.has(CIV_ROLE_ID)) {
-    await member.roles.add(
-      CIV_ROLE_ID,
-      `Discharged by ${actorTag}: ${reason}`
-    );
+    await member.roles.add(CIV_ROLE_ID, `Discharged by ${actorTag}: ${reason}`);
     steps.push('Added "Civilian"');
   }
 
@@ -153,18 +137,15 @@ async function dischargeMember({ guild, me, actorTag, member, reason }) {
 
 const client = new Client({
   intents: [
-    GatewayIntentBits.Guilds, 
-    GatewayIntentBits.GuildMembers, 
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMembers,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent
   ],
 });
 
-
 client.on('messageCreate', async (message) => {
-    console.log(`Message in ${message.channel.id}`);
     if (message.channel.id !== '962736568303505469') return;
-    console.log(`Mentions: ${message.mentions.users.size}`);
     if (message.mentions.users.size > 0) {
         for (const [id, user] of message.mentions.users) {
             const data = await PingTracker.findOneAndUpdate(
@@ -172,28 +153,35 @@ client.on('messageCreate', async (message) => {
                 { $inc: { count: 1 } },
                 { upsert: true, new: true }
             );
-            console.log(`${user.tag} ping count: ${data.count}`);
             if (data.count >= 10) {
                 const roleId = '961105915350777906';
                 try {
                     const member = await message.guild.members.fetch(user.id);
-                    if (member) {
-                        if (!member.roles.cache.has(roleId)) {
-                            const commandChannel = message.guild.channels.cache.get(LOG_CHANNEL_ID);
-                            await commandChannel.send(`yo hello saner or mitchell or belgrade there's this guy who attended 10 events now so give ${user} po3 if you think they deserve it. ignore ts if you are NOT a command`);
-                        }
+                    if (member && !member.roles.cache.has(roleId)) {
+                        const commandChannel = message.guild.channels.cache.get(LOG_CHANNEL_ID);
+                        const row = new ActionRowBuilder().addComponents(
+                            new ButtonBuilder()
+                                .setCustomId(`approve_promotion_${user.id}`)
+                                .setLabel("Approve promotion?")
+                                .setStyle(ButtonStyle.Success),
+                            new ButtonBuilder()
+                                .setCustomId(`deny_po3_${user.id}`)
+                                .setLabel("Deny promotion?")
+                                .setStyle(ButtonStyle.Danger)
+                        );
+                        await commandChannel.send({
+                            content: `${user} has attended 10 events. Grant promotion??`,
+                            components: [row]
+                        });
                     }
                 } catch (err) {
-                    console.error("Failed to add role or fetch member:", err);
+                    console.error("Failed to fetch member:", err);
                 }
             }
         }
     }
 });
 
-
-
-// Build slash commands
 const dischargeCmd = new SlashCommandBuilder()
   .setName("discharge")
   .setDescription("Discharge a member")
@@ -209,17 +197,13 @@ const massDischargeCmd = new SlashCommandBuilder()
   .setName("massdischarge")
   .setDescription("Discharge multiple members")
   .addStringOption((opt) =>
-    opt
-      .setName("members")
-      .setDescription("Paste mentions or IDs separated by space or newline")
-      .setRequired(true)
+    opt.setName("members").setDescription("Paste mentions or IDs separated by space or newline").setRequired(true)
   )
   .addStringOption((opt) =>
-    opt.setName("reason").setDescription("Reason").setRequired(true)
+    opt.setName("reason").setDescription("Reason").setRequired(false)
   )
   .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles);
 
-// Register commands for all guilds
 async function registerCommands() {
   const rest = new REST({ version: "10" }).setToken(TOKEN);
   try {
@@ -234,22 +218,45 @@ async function registerCommands() {
   }
 }
 
-mongoose.connect('mongodb+srv://josephjhoffman:Jaivir2014@yns1discharge.sxdtpev.mongodb.net/?appName=YNS1Discharge', {
-  dbName: 'AttendanceData'
-});
+mongoose.connect(MONGODB_URI, { dbName: 'AttendanceData' })
+  .then(() => console.log("Connected to MongoDB Database"))
+  .catch((err) => console.error("Could not connect to MongoDB:", err));
+
 client.once("ready", async () => {
   console.log(`Logged in as ${client.user.tag}`);
-client.user.setActivity('rewarding activity, punishing inactivity', { type: ActivityType.Watching });
   await registerCommands();
+});
 
 client.on("interactionCreate", async (interaction) => {
+  if (interaction.isButton()) {
+    const parts = interaction.customId.split("_");
+    const action = parts[0];
+    const userId = parts[2];
+
+    if (action === "approve") {
+      try {
+        const member = await interaction.guild.members.fetch(userId);
+        await member.roles.add('961105915350777906');
+        await interaction.update({ content: `Promotion granted to ${member.user.tag} by ${interaction.user.tag}.`, components: [] });
+      } catch (err) {
+        console.error("Failed to grant role:", err);
+        await interaction.update({ content: `Failed to promote, check permissions?`, components: [] });
+      }
+    }
+
+    if (action === "deny") {
+      await interaction.update({ content: `Promotion denied by ${interaction.user.tag}.`, components: [] });
+    }
+
+    return;
+  }
+
   if (!interaction.isChatInputCommand()) return;
 
   const guild = interaction.guild;
   const me = await guild.members.fetchMe();
   const logChannel = guild.channels.cache.get(LOG_CHANNEL_ID);
 
-  // /discharge
   if (interaction.commandName === "discharge") {
     const user = interaction.options.getUser("member", true);
     const reason = interaction.options.getString("reason") ?? "No reason provided";
@@ -264,15 +271,8 @@ client.on("interactionCreate", async (interaction) => {
     await interaction.deferReply({ ephemeral: true });
 
     try {
-      const result = await dischargeMember({
-        guild,
-        me,
-        actorTag: interaction.user.tag,
-        member,
-        reason,
-      });
+      const result = await dischargeMember({ guild, me, actorTag: interaction.user.tag, member, reason });
 
-      // send log embed
       if (logChannel) {
         const embed = new EmbedBuilder()
           .setTitle("Member Discharged")
@@ -293,17 +293,13 @@ client.on("interactionCreate", async (interaction) => {
     }
   }
 
-  // /massdischarge
   if (interaction.commandName === "massdischarge") {
     const membersText = interaction.options.getString("members", true);
     const reason = interaction.options.getString("reason") ?? "No reason provided";
     const ids = extractUserIds(membersText);
 
     if (ids.length === 0) {
-      return interaction.reply({
-        content: "No valid IDs or mentions found.",
-        ephemeral: true,
-      });
+      return interaction.reply({ content: "No valid IDs or mentions found.", ephemeral: true });
     }
 
     await interaction.deferReply({ ephemeral: true });
@@ -314,13 +310,7 @@ client.on("interactionCreate", async (interaction) => {
     for (const id of ids.slice(0, 25)) {
       try {
         const member = await guild.members.fetch(id);
-        await dischargeMember({
-          guild,
-          me,
-          actorTag: interaction.user.tag,
-          member,
-          reason,
-        });
+        await dischargeMember({ guild, me, actorTag: interaction.user.tag, member, reason });
         successes.push(id);
       } catch {
         failures.push(id);
