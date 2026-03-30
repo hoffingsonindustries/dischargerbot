@@ -239,12 +239,8 @@ mongoose.connect('mongodb+srv://josephjhoffman:Jaivir2014@yns1discharge.sxdtpev.
 });
 client.once("ready", async () => {
   console.log(`Logged in as ${client.user.tag}`);
-  client.user.setPresence({
-    activities: [{ name: 'punishing inactivity and rewarding activity', type: ActivityType.Watching }],
-    status: 'online'
-  });
+client.user.setActivity('rewarding activity, punishing inactivity', { type: ActivityType.Watching });
   await registerCommands();
-});
 
 client.on("interactionCreate", async (interaction) => {
   if (!interaction.isChatInputCommand()) return;
