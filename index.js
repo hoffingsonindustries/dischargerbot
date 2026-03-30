@@ -153,12 +153,12 @@ client.on('messageCreate', async (message) => {
                 { $inc: { count: 1 } },
                 { upsert: true, new: true }
             );
-            if (data.count >= 10) {
+            if (data.count == 10) {
                 const roleId = '961105915350777906';
                 try {
                     const member = await message.guild.members.fetch(user.id);
                     if (member && !member.roles.cache.has(roleId)) {
-                        const commandChannel = message.guild.channels.cache.get(LOG_CHANNEL_ID);
+                        const commandChannel = message.guild.channels.cache.get(BOARD_OF_COMMAND);
                         const row = new ActionRowBuilder().addComponents(
                             new ButtonBuilder()
                                 .setCustomId(`approve_promotion_${user.id}`)
@@ -237,7 +237,7 @@ client.on("interactionCreate", async (interaction) => {
       try {
         const member = await interaction.guild.members.fetch(userId);
         await member.roles.add('961105915350777906');
-        await interaction.update({ content: `Promotion granted to ${member.user.tag} by ${interaction.user.tag}.`, components: [] });
+        await interaction.update({ content: `Promotion granted to ${member.user} by ${interaction.user}.`, components: [] });
       } catch (err) {
         console.error("Failed to grant role:", err);
         await interaction.update({ content: `Failed to promote, check permissions?`, components: [] });
@@ -245,7 +245,7 @@ client.on("interactionCreate", async (interaction) => {
     }
 
     if (action === "deny") {
-      await interaction.update({ content: `Promotion denied by ${interaction.user.tag}.`, components: [] });
+      await interaction.update({ content: `Promotion for ${member.user} denied by ${interaction.user.tag}.`, components: [] });
     }
 
     return;
