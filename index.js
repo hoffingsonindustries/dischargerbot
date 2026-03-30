@@ -216,7 +216,7 @@ const massDischargeCmd = new SlashCommandBuilder()
       .setRequired(true)
   )
   .addStringOption((opt) =>
-    opt.setName("reason").setDescription("Reason").setRequired(false)
+    opt.setName("reason").setDescription("Reason").setRequired(true)
   )
   .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles);
 
@@ -286,15 +286,14 @@ client.on("interactionCreate", async (interaction) => {
           .setColor("Red")
           .addFields(
             { name: "User", value: `${result.tag}` },
-            { name: "By", value: `${interaction.user.tag}` },
-            { name: "Reason", value: reason },
-            { name: "Steps", value: result.steps.join("\n") }
+            { name: "Discharger", value: `${interaction.user.tag}` },
+            { name: "Reason", value: reason }
           )
           .setTimestamp();
         logChannel.send({ embeds: [embed] });
       }
 
-      return interaction.editReply(`✅ ${result.tag} has been discharged.`);
+      return interaction.editReply(`${result.tag} has been discharged.`);
     } catch (err) {
       console.error(err);
       return interaction.editReply("Failed to discharge.");
