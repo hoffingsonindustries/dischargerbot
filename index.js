@@ -165,7 +165,7 @@ client.on('messageCreate', async (message) => {
                                 .setLabel("Approve promotion?")
                                 .setStyle(ButtonStyle.Success),
                             new ButtonBuilder()
-                                .setCustomId(`deny_po3_${user.id}`)
+                                .setCustomId(`deny_promotion_${user.id}`)
                                 .setLabel("Deny promotion?")
                                 .setStyle(ButtonStyle.Danger)
                         );
