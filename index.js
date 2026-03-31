@@ -196,10 +196,10 @@ const dischargeCmd = new SlashCommandBuilder()
 
 const attendanceCheckCmd = new SlashCommandBuilder()
   .setName("attendancecheck")
-  .setDescription("Check your attendace.")
+  .setDescription("Check attendance.")
   .addUserOption((opt) =>
     opt.setName("member").setDescription("Person to check the attendance of").setRequired(true)
-  )
+  );
 
 const massDischargeCmd = new SlashCommandBuilder()
   .setName("massdischarge")
@@ -316,7 +316,7 @@ if (interaction.commandName === "attendancecheck") {
     );
 
     return interaction.reply({ 
-        content: `Attendance count for **${user.username}**: \`${attendanceData.count}\``, 
+        content: `Attendance count for **${user.username}**: ${attendanceData.count}`, 
         ephemeral: true 
     });
 }
