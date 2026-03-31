@@ -160,7 +160,7 @@ client.on('messageCreate', async (message) => {
                 try {
                     const member = await message.guild.members.fetch(user.id);
                     if (member && !member.roles.cache.has(roleId) && member.roles.cache.has(seamanRoleId)) {
-                        const commandChannel = message.guild.channels.cache.get(BOARD_OF_COMMAND);
+                        const commandChannel = await message.guild.channels.fetch(BOARD_OF_COMMAND);
                         const row = new ActionRowBuilder().addComponents(
                             new ButtonBuilder()
                                 .setCustomId(`approve_promotion_${user.id}`)
