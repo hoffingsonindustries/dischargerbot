@@ -155,10 +155,11 @@ client.on('messageCreate', async (message) => {
                 { upsert: true, new: true }
             );
             if (data.count == 10) {
+                const seamanRoleId = '961106083601063946';
                 const roleId = '961105915350777906';
                 try {
                     const member = await message.guild.members.fetch(user.id);
-                    if (member && !member.roles.cache.has(roleId)) {
+                    if (member && !member.roles.cache.has(roleId) && member.roles.cache.has(seamanRoleId)) {
                         const commandChannel = message.guild.channels.cache.get(BOARD_OF_COMMAND);
                         const row = new ActionRowBuilder().addComponents(
                             new ButtonBuilder()
