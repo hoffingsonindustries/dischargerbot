@@ -215,7 +215,7 @@ const massDischargeCmd = new SlashCommandBuilder()
 async function registerCommands() {
   const rest = new REST({ version: "10" }).setToken(TOKEN);
   try {
-    const body = [dischargeCmd.toJSON(), massDischargeCmd.toJSON()];
+    const body = [dischargeCmd.toJSON(), massDischargeCmd.toJSON(), attendanceCheckCmd.toJSON()];
     const guilds = await client.guilds.fetch();
     for (const [guildId] of guilds) {
       await rest.put(Routes.applicationGuildCommands(client.user.id, guildId), { body });
