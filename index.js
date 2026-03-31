@@ -194,6 +194,13 @@ const dischargeCmd = new SlashCommandBuilder()
   )
   .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles);
 
+const attendanceCheckCmd = new SlashCommandBuilder()
+  .setName("attendancecheck")
+  .setDescription("Check your attendace.")
+  .addUserOption((opt) =>
+    opt.setName("member").setDescription("Person to check the attendance of").setRequired(true)
+  )
+
 const massDischargeCmd = new SlashCommandBuilder()
   .setName("massdischarge")
   .setDescription("Discharge multiple members")
@@ -292,7 +299,30 @@ client.on("interactionCreate", async (interaction) => {
       console.error(err);
       return interaction.editReply("Failed to discharge.");
     }
-  }
+  
+if (interaction.commandName === "attendancecheck") {
+    const user = interaction.options.getUser("member", true);
+
+    try {
+        await interaction.guild.members.fetch(user.id);
+    } catch {
+        return interaction.reply({ content: "Member not found.", ephemeral: true });
+    }
+
+    const attendanceData = await PingTracker.findOneAndUpdate(
+                { userId: user.id },
+                { $inc: { count: 1 } },
+                { upsert: true, new: true }
+            );
+
+    return interaction.reply({ 
+        content: `Attendance count for ${user.username}: **${attendanceData.count}**`, 
+        ephemeral: true 
+    });
+}
+
+
+
 
   if (interaction.commandName === "massdischarge") {
     const membersText = interaction.options.getString("members", true);
