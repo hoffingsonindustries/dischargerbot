@@ -310,21 +310,22 @@ client.on("interactionCreate", async (interaction) => {
   if (interaction.commandName === "attendancecheck") {
     const user = interaction.options.getUser("member", true);
 
+    let member;
     try {
-      await interaction.guild.members.fetch(user.id);
+        member = await interaction.guild.members.fetch(user.id);
     } catch {
-      return interaction.reply({ content: "Member not found.", ephemeral: true });
+        return interaction.reply({ content: "Member not found.", ephemeral: true });
     }
 
     const attendanceData = await PingTracker.findOneAndUpdate(
-      { userId: user.id },
-      { $setOnInsert: { userId: user.id, count: 0 } },
-      { upsert: true, new: true }
+        { userId: user.id },
+        { $setOnInsert: { userId: user.id, count: 0 } },
+        { upsert: true, new: true }
     );
 
     return interaction.reply({
-      content: `Total events attended for **${member.displayName}**: ${attendanceData.count}`,
-      ephemeral: false
+        content: `Total events attended for **${member.displayName}**: ${attendanceData.count}`,
+        ephemeral: false
     });
   }
 
