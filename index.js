@@ -281,7 +281,7 @@ client.on("interactionCreate", async (interaction) => {
       return interaction.reply({ content: "Member not found.", ephemeral: true });
     }
 
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ ephemeral: false });
 
     try {
       const result = await dischargeMember({ guild, me, actorTag: interaction.user.tag, member, reason });
@@ -322,8 +322,8 @@ client.on("interactionCreate", async (interaction) => {
     );
 
     return interaction.reply({
-      content: `Attendance count for **${user.username}**: ${attendanceData.count}`,
-      ephemeral: true
+      content: `Total events attended for **${user}**: ${attendanceData.count}`,
+      ephemeral: false
     });
   }
 
@@ -336,7 +336,7 @@ client.on("interactionCreate", async (interaction) => {
       return interaction.reply({ content: "No valid IDs or mentions found.", ephemeral: true });
     }
 
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ ephemeral: false });
 
     const successes = [];
     const failures = [];
