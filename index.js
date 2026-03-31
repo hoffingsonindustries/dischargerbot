@@ -225,8 +225,8 @@ async function registerCommands() {
     console.error("Failed to register commands:", err);
   }
 }
-
-mongoose.connect(MONGODB_URI, { dbName: 'AttendanceData' })
+// no
+  mongoose.connect(MONGODB_URI, { dbName: 'AttendanceData' })
   .then(() => console.log("Connected to MongoDB Database"))
   .catch((err) => console.error("Could not connect to MongoDB:", err));
 
