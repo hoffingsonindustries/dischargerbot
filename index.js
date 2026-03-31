@@ -310,16 +310,17 @@ if (interaction.commandName === "attendancecheck") {
     }
 
     const attendanceData = await PingTracker.findOneAndUpdate(
-                { userId: user.id },
-                { $inc: { count: 1 } },
-                { upsert: true, new: true }
-            );
+        { userId: user.id },
+        { $setOnInsert: { userId: user.id, count: 0 } },
+        { upsert: true, new: true }
+    );
 
     return interaction.reply({ 
-        content: `Attendance count for ${user.username}: **${attendanceData.count}**`, 
+        content: `Attendance count for **${user.username}**: \`${attendanceData.count}\``, 
         ephemeral: true 
     });
 }
+
 
 
 
