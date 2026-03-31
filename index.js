@@ -323,7 +323,7 @@ client.on("interactionCreate", async (interaction) => {
     );
 
     return interaction.reply({
-      content: `Total events attended for **${user.displayName}**: ${attendanceData.count}`,
+      content: `Total events attended for **${member.displayName}**: ${attendanceData.count}`,
       ephemeral: false
     });
   }
