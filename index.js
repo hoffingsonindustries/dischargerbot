@@ -162,7 +162,7 @@ client.on('messageCreate', async (message) => {
             );
 
             const HostData = await HostTracker.findOneAndUpdate(
-                { userId: user.id },
+                { userId: hostId },
                 { $inc: { count: 1 } },
                 { upsert: true, new: true }
             );
@@ -226,10 +226,18 @@ const massDischargeCmd = new SlashCommandBuilder()
   )
   .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles);
 
+const hostCheck = new SlashCommandBuilder()
+  .setName("hostcheck")
+  .setDescription("Check how many events a person has hosted.")
+  .addUserOption((opt) =>
+    opt.setName("member").setDescription("Who to check the host amount of.").setRequired(true)
+  )
+  .setDefaultMemberPermissions(PermissionFlagsBits.MentionEveryone);
+
 async function registerCommands() {
   const rest = new REST({ version: "10" }).setToken(TOKEN);
   try {
-    const body = [dischargeCmd.toJSON(), massDischargeCmd.toJSON(), attendanceCheckCmd.toJSON()];
+    const body = [dischargeCmd.toJSON(), massDischargeCmd.toJSON(), attendanceCheckCmd.toJSON(), hostCheck.toJSON()];
     const guilds = await client.guilds.fetch();
     for (const [guildId] of guilds) {
       await rest.put(Routes.applicationGuildCommands(client.user.id, guildId), { body });
@@ -338,6 +346,28 @@ client.on("interactionCreate", async (interaction) => {
 
     return interaction.reply({
         content: `Total events attended for **${member.displayName}**: ${attendanceData.count}`,
+        ephemeral: false
+    });
+  }
+
+    if (interaction.commandName === "hostcheck") {
+    const user = interaction.options.getUser("member", true);
+
+    let member;
+    try {
+        member = await interaction.guild.members.fetch(user.id);
+    } catch {
+        return interaction.reply({ content: "Member not found.", ephemeral: true });
+    }
+
+    const hostData = await HostTracker.findOneAndUpdate(
+        { userId: user.id },
+        { $setOnInsert: { userId: user.id, count: 0 } },
+        { upsert: true, new: true }
+    );
+
+    return interaction.reply({
+        content: `Total events attended for **${member.displayName}**: ${hostData.count}`,
         ephemeral: false
     });
   }
