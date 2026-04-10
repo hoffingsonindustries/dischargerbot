@@ -20,6 +20,11 @@ const pingSchema = new mongoose.Schema({
     count: { type: Number, default: 0 }
 });
 const PingTracker = mongoose.model('PingTracker', pingSchema);
+const hostSchema = new mongoose.Schema({
+    userId: {type: String, required: true, unique: true },
+    count: { type: Number, default: 0 }
+});
+const HostTracker = mongoose.model('HostTracker', pingSchema)
 
 const TOKEN = process.env.DISCORD_TOKEN;
 const CREWMAN_ROLE_ID = process.env.CREWMAN_ROLE_ID;
@@ -147,6 +152,7 @@ const client = new Client({
 
 client.on('messageCreate', async (message) => {
     if (message.channel.id !== '962736568303505469') return;
+    const hostId = message.author.id
     if (message.mentions.users.size > 0) {
         for (const [id, user] of message.mentions.users) {
             const data = await PingTracker.findOneAndUpdate(
@@ -154,6 +160,13 @@ client.on('messageCreate', async (message) => {
                 { $inc: { count: 1 } },
                 { upsert: true, new: true }
             );
+
+            const HostData = await HostTracker.findOneAndUpdate(
+                { userId: user.id },
+                { $inc: { count: 1 } },
+                { upsert: true, new: true }
+            );
+          
             if (data.count == 10) {
                 const seamanRoleId = '961106083601063946';
                 const roleId = '961105915350777906';
